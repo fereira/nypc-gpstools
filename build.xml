@@ -1,0 +1,61 @@
+<!-- ANT v1.6.5 build file
+
+Hopefully you will not have to alter this file to make it work on your system.
+Instead, create a localbuild.properties file from the localbuild.properties.in template.
+
+
+Targets:
+The default target (build) will compile all classes
+"deploy" will deploy the application
+"clean" will remove the classfiles
+
+-->
+<project name="nypc-gpstools" default="compile" basedir=".">
+
+
+   <!-- Create the build.properties file from localbuild.properties
+   and set the necessary variables there, try to avoid altering this file -->
+   <property file="localbuild.properties"/>
+   <property file="build.properties"/>
+
+   <!-- The directories containing source code, properties, and webapp files -->
+
+   <property name="src.dir" value="./src"/>
+   <property name="properties" value="./properties"/>
+   <property name="build.dir" value="./build"/>
+   <property name="war.dir" value="./war"/>
+   <property name="support" value="./support" />
+
+   <property name="java.lib" value="./lib"/>
+
+   <path id="compile.classpath">
+      <!-- Include all JAR files that will be included in /lib -->
+
+      <fileset dir="lib">
+         <include name="**/*.jar"/>
+      </fileset>
+   </path>
+
+  <target name="prepare">
+    <mkdir dir="${build.dir}" />
+  </target>
+
+  <target name="compile" depends="prepare">
+
+    <javac destdir="${build.dir}"
+      target="${compile.target}" source="${compile.source}" debug="true"
+      deprecation="false" optimize="false" failonerror="true">
+      <src path="${src.dir}" />
+      <classpath refid="compile.classpath" />
+      <compilerarg value="${java.opts}" />
+    </javac>
+  </target>
+
+   <!-- CAREFUL HERE! We could easily delete things that we shouldn't -->
+   <target name="clean">
+      <delete dir="${build.dir}"/>
+   </target>
+
+
+
+</project>
