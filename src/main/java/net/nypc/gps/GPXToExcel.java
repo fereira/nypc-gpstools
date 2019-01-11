@@ -20,6 +20,22 @@ public class GPXToExcel {
 	private String inputFile;
 	private String outputFile;
 	private boolean debug;
+	
+	private final String GCCODE;
+	private final String GCNAME;
+	private final String LATITUDE;
+	private final String LONGITUDE;
+	private final String CACHETYPE;
+	private final String SIZE;
+	private final String DIFFICULTY;
+	private final String TERRAIN;
+	private final String SHORTDESC;
+	private final String LONGDESC;
+	private final String PLACEDBY;
+	private final String OWNER;
+	private final String COUNTRY;
+	private final String STATE;
+	
 
 	public String getInputFile() {
 		return inputFile;
