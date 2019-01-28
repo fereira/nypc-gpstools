@@ -4,8 +4,11 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.List;
 
 import net.nypc.gps.bo.GPX;
+import net.nypc.gps.bo.Groundspeak;
+import net.nypc.gps.bo.Waypoint;
 import net.nypc.gps.service.GPXService;
 
 import org.apache.commons.cli.CommandLine;
@@ -16,6 +19,7 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
@@ -33,25 +37,28 @@ public class GPXToExcel {
 	
 	private String inputFile;
 	private String outputFile;
+	private String format;
 	private boolean debug;
 	
 	Workbook workbook = null;
 	Sheet sheet = null;
 	
-	private final int GCCODE = 1;
-	private final int GCNAME = 2;
-	private final int LATITUDE = 3;
-	private final int LONGITUDE = 4;
-	private final int CACHETYPE = 5;
-	private final int SIZE = 6;
-	private final int DIFFICULTY = 7;
-	private final int TERRAIN = 8;
-	private final int SHORTDESC = 9;
-	private final int LONGDESC = 10;
-	private final int PLACEDBY = 11;
-	private final int OWNER = 12;
-	private final int COUNTRY = 13;
-	private final int STATE = 14;
+	private final int GCCODE = 0;
+	private final int GCNAME = 1;
+	private final int LATITUDE = 2;
+	private final int LONGITUDE = 3;
+	private final int CACHETYPE = 4;
+	private final int SIZE = 5;
+	private final int DIFFICULTY = 6;
+	private final int TERRAIN = 7;
+	private final int SHORTDESC = 8;
+	private final int LONGDESC = 9;
+	private final int PLACEDBY = 10;
+	private final int OWNER = 11;
+	private final int COUNTRY = 12;
+	private final int STATE = 13;
+	
+	private final int MAXCELLSIZE = 32767;
 	
 	private static String[] columns = {"GC Code", "Name", "Latitude", "Longitude", "Type", "Size"
 		, "Difficulty", "Terrain", "Short Description", "Long Description", "Placed By", "Owner"
@@ -72,6 +79,14 @@ public class GPXToExcel {
 
 	public void setOutputFile(String outputFile) {
 		this.outputFile = outputFile;
+	}
+
+	public String getFormat() {
+		return format;
+	}
+
+	public void setFormat(String format) {
+		this.format = format;
 	}
 
 	public boolean isDebug() {
@@ -96,7 +111,7 @@ public class GPXToExcel {
 		String appName = this.getClass().getSimpleName();
 		Options options = new Options();
 		options.addOption(new Option("i", "inputFile", true, "Input file"));
-		options.addOption(new Option("o", "outputFile", true, "Output file"));
+		options.addOption(new Option("f", "format", true, "Output format (xlsx, xls, or csv"));
 		options.addOption(new Option("D","debug", false, "turn on debug output"));
 		CommandLineParser parser = new DefaultParser();
 		HelpFormatter formatter = new HelpFormatter();
@@ -109,11 +124,10 @@ public class GPXToExcel {
 				System.exit(0);
 			}
 			
-			if (cmd.hasOption("outputFile")) {
-				this.setOutputFile(cmd.getOptionValue("outputFile"));
+			if (cmd.hasOption("format")) {
+				this.setFormat(cmd.getOptionValue("format"));
 			} else { 
-				formatter.printHelp(appName, options );
-				System.exit(0);
+				this.setFormat("xlsx");
 			}
 			 
 			if (cmd.hasOption("debug")) {
@@ -132,23 +146,39 @@ public class GPXToExcel {
 		System.out.println("GPXToExcel");
         GPXService gpxService = new GPXService();
         
-        //FileOutputStream outputStream = new FileOutputStream(new File(this.getOutputFile()));
-       
-		if (this.getOutputFile().endsWith(".xlsx")) {
+		if (this.getFormat().equals("xlsx")) {
 			workbook = new XSSFWorkbook();
-		} else if (this.getOutputFile().endsWith(".xls")) {
+			this.outputFile = "geocaches.xlsx";
+		} else if (this.getFormat().equals("xls")) {
 			workbook = new HSSFWorkbook();
+			this.outputFile = "geocaches.xls";
+		} else if (this.getFormat().equals("csv")) {
+			workbook = new HSSFWorkbook();
+			this.outputFile = "geocaches.csv";
 		} else {
-			System.err.println("Use a .xlsx or .xls file extension for the output file.");
+			System.err.println("Only valid formats are xlsx, xls, or csv.");
 			System.exit(1);
 		}
 		
-		CreationHelper createHelper = workbook.getCreationHelper();
-		
-		
-		String gpxXml = new String();
+		File currentDirectory = new File(new File(".").getAbsolutePath());
+		String absFile = new String();
 		try {
-			gpxXml = FileUtils.readFileToString(new File(this.inputFile));
+			absFile = currentDirectory.getCanonicalPath()+"/"+ this.getInputFile();
+			System.out.println("directory: "+currentDirectory.getCanonicalPath());
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+		System.out.println("inputFile: "+ absFile);
+		String gpxXml = new String();
+		File f = new File(absFile);
+		if (!f.exists()) {
+			System.err.println("Could not find input file");
+			System.exit(1);
+		}
+		try {
+			gpxXml = FileUtils.readFileToString(f);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -158,7 +188,7 @@ public class GPXToExcel {
 		// Create a Sheet
         sheet = workbook.createSheet("Geocaches");
 		writeHeader(gpx);
-		// writeRows(gpx);
+		writeRows(gpx);
 		// Resize all columns to fit the content size
         for(int i = 0; i < columns.length; i++) {
             sheet.autoSizeColumn(i);
@@ -206,6 +236,35 @@ public class GPXToExcel {
         }
         
 		
+	}
+	
+	public void writeRows(GPX gpx) {
+	 
+		List<Waypoint> waypoints = gpx.getWaypoints();
+		int rowNum = 1;
+		String shortDesc = new String();
+		String longDesc = new String();
+		for (Waypoint waypoint: waypoints) {
+			Groundspeak geocache = waypoint.getGroundspeak();
+			Row row = sheet.createRow(rowNum++);
+	        row.createCell(GCCODE).setCellValue(waypoint.getName());
+	        row.createCell(GCNAME).setCellValue(geocache.getName());
+	        row.createCell(LATITUDE).setCellValue(waypoint.getLat());
+	        row.createCell(LONGITUDE).setCellValue(waypoint.getLon());
+	        row.createCell(CACHETYPE).setCellValue(waypoint.getType());
+	        row.createCell(SIZE).setCellValue(geocache.getContainer());
+	        row.createCell(DIFFICULTY).setCellValue(geocache.getDifficulty());
+	        row.createCell(TERRAIN).setCellValue(geocache.getTerrain());
+	        shortDesc = geocache.getShortDescription();
+	        longDesc = StringUtils.abbreviate(geocache.getLongDescription(), MAXCELLSIZE);
+	        
+	        row.createCell(SHORTDESC).setCellValue(shortDesc);
+	        row.createCell(LONGDESC).setCellValue(longDesc);
+	        row.createCell(PLACEDBY).setCellValue(geocache.getPlaced_by());
+	        row.createCell(OWNER).setCellValue(geocache.getOwner());
+	        row.createCell(COUNTRY).setCellValue(geocache.getCountry());
+	        row.createCell(STATE).setCellValue(geocache.getState());
+		}
 	}
 
 }

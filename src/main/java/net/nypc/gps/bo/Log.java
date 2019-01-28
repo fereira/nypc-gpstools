@@ -22,6 +22,9 @@ public class Log {
 	
 	@XStreamAlias("groundspeak:text")
 	private String text;
+	
+	@XStreamAlias("groundspeak:log_wpt")
+	private String wpt;
 
 	public String getId() {
 		return id;
@@ -61,6 +64,14 @@ public class Log {
 
 	public void setText(String text) {
 		this.text = text;
+	}
+
+	public String getWpt() {
+		return wpt;
+	}
+
+	public void setWpt(String wpt) {
+		this.wpt = wpt;
 	}
 
 	public Log() {
