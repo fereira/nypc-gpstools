@@ -1,5 +1,7 @@
 package net.nypc.gps.bo;
 
+import net.nypc.gps.CoordConverter;
+
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
@@ -22,13 +24,13 @@ public class Waypoint {
 	private String sym;
 	private String type;
 	
-	
+	CoordConverter converter;
 	
 	@XStreamAlias("groundspeak:cache")
     private Groundspeak groundspeak;
     
 	public Waypoint() {
-		// TODO Auto-generated constructor stub
+		this.converter = new CoordConverter();
 	}
 
 	public String getLat() {

@@ -1,6 +1,5 @@
 #!/bin/bash
 
-BUILD_DIR=/cul/src/javadev
-export CLASSPATH=$BUILD_DIR/bin/:$BUILD_DIR/lib/*
+export CLASSPATH=target/classes/:../lib/*
 # echo $CLASSPATH
 java -classpath $CLASSPATH net.fereira.gps.Waypoints2Xml $*

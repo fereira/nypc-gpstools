@@ -1,3 +1,3 @@
 #!/bin/bash
-export CLASSPATH=../build:../lib/*
-java -classpath ../build:../lib/* net.nypc.gps.GPXToExcel $*
+export CLASSPATH=../target/classes:../lib/*
+java -classpath ../target/classes:../lib/* net.nypc.gps.GPXToExcel $*

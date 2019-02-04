@@ -1,6 +1,7 @@
 package net.nypc.gps.service;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.List;
 
 import net.nypc.gps.bo.Attribute;
@@ -14,41 +15,46 @@ import org.apache.commons.io.FileUtils;
 
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.converters.extended.NamedCollectionConverter;
-import com.thoughtworks.xstream.io.xml.DomDriver;
+import com.thoughtworks.xstream.io.xml.DomDriver; 
 
 public class GPXService {
+	
+	private XStream xstream;
+	Class<?>[] classes = new Class[] { GPXService.class  };
 
 	public GPXService() {
-		// TODO Auto-generated constructor stub
+		this.xstream = new XStream(new DomDriver());
+		XStream.setupDefaultSecurity(xstream);
+		xstream.allowTypesByWildcard(new String[] {"net.nypc.gps.**"});
+		xstream.allowTypesByRegExp(new String[] { ".*" });
 	}
 	
 	public GPX xmlToGpx(String xml) {
-		XStream xstream = new XStream(new DomDriver());
-		xstream.registerConverter(new GPXConverter());
 		
-		xstream.registerLocalConverter(GPX.class, "waypoints", new NamedCollectionConverter(xstream.getMapper(),
+		this.xstream.registerConverter(new GPXConverter());
+		this.xstream.registerLocalConverter(GPX.class, "waypoints", new NamedCollectionConverter(this.xstream.getMapper(),
 	            "waypoint", Object.class));
 		
 		
-		xstream.alias("gpx", GPX.class);
-		xstream.alias("wpt", Waypoint.class);
-		xstream.alias("groundspeak:cache", Groundspeak.class);
-		xstream.aliasField("groundspeak:cache", Waypoint.class, "geocache");
-		xstream.aliasField("groundspeak:name", Groundspeak.class, "name");
-		xstream.aliasField("groundspeak:placed_by", Groundspeak.class, "placed_by");
-		xstream.aliasField("groundspeak:owner", Groundspeak.class, "owner");
+		this.xstream.alias("gpx", GPX.class);
+		this.xstream.alias("wpt", Waypoint.class);
+		this.xstream.alias("groundspeak:cache", Groundspeak.class);
+		this.xstream.aliasField("groundspeak:cache", Waypoint.class, "geocache");
+		this.xstream.aliasField("groundspeak:name", Groundspeak.class, "name");
+		this.xstream.aliasField("groundspeak:placed_by", Groundspeak.class, "placed_by");
+		this.xstream.aliasField("groundspeak:owner", Groundspeak.class, "owner");
 		
 		
-		xstream.addImplicitCollection(GPX.class, "waypoints");
-		xstream.processAnnotations(GPX.class);
-		xstream.processAnnotations(Waypoint.class);
-		xstream.processAnnotations(Groundspeak.class);
-		xstream.processAnnotations(Attribute.class);
-		xstream.processAnnotations(Log.class); 
+		this.xstream.addImplicitCollection(GPX.class, "waypoints");
+		this.xstream.processAnnotations(GPX.class);
+		this.xstream.processAnnotations(Waypoint.class);
+		this.xstream.processAnnotations(Groundspeak.class);
+		this.xstream.processAnnotations(Attribute.class);
+		this.xstream.processAnnotations(Log.class); 
 		
 		GPX gpx = new GPX();
 		try {
-			gpx = (GPX) xstream.fromXML(xml);
+			gpx = (GPX) this.xstream.fromXML(xml);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -58,14 +64,13 @@ public class GPXService {
 	}
 	
 	public String gpxToXml(GPX gpx) {
-		String xml = new String();
-		XStream xstream = new XStream(new DomDriver());
-		xstream.alias("gpx", GPX.class);
-		xstream.alias("wpt", Waypoint.class);
-		xstream.addImplicitCollection(GPX.class, "waypoints");
-		xstream.useAttributeFor(Waypoint.class, "lat");
-		xstream.useAttributeFor(Waypoint.class, "lon");
-		xml = xstream.toXML(gpx);
+		String xml = new String(); 
+		this.xstream.alias("gpx", GPX.class);
+		this.xstream.alias("wpt", Waypoint.class);
+		this.xstream.addImplicitCollection(GPX.class, "waypoints");
+		this.xstream.useAttributeFor(Waypoint.class, "lat");
+		this.xstream.useAttributeFor(Waypoint.class, "lon");
+		xml = this.xstream.toXML(gpx);
 		return xml;
 	}
 	

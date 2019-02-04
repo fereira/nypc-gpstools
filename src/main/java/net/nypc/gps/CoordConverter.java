@@ -185,7 +185,30 @@ public class CoordConverter {
 		 
 		latOrLon = signe * (Math.floor(degrees) + newMin);
 		return (latOrLon);
-	} 
+	}
+	
+	public String DecimalToDDM(Double decimal, String latOrLong) {
+		String ddm = new String();
+		String hemisphere = new String();
+		if (latOrLong.equals("lat")) {
+			if (decimal < 0.0) {
+				hemisphere = "S";
+			} else {
+				hemisphere = "N";
+			}
+		} else if (latOrLong.equals("long")) {
+			if (decimal < 0.0) {
+				hemisphere = "W";
+			} else {
+				hemisphere = "E";
+			}
+		}
+		int iDegrees = (int) Math.round(decimal);
+		int minutes = (int) Math.rint(decimal)/60;
+		ddm = hemisphere + " "+ String.valueOf(iDegrees)+"."+String.valueOf(minutes);
+		return ddm;
+		
+	}
 	
 	
 

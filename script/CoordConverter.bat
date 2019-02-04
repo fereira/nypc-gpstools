@@ -1,2 +1,2 @@
 @rem ConvertGPX
-@java -Xmx1024M -cp "../build;../lib/*" net.nypc.gps.CoordConverter %*
+@java -Xmx1024M -cp "../target/classes;../lib/*" net.nypc.gps.CoordConverter %*

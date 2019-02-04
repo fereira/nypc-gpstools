@@ -10,6 +10,7 @@ import net.nypc.gps.bo.GPX;
 import net.nypc.gps.bo.Groundspeak;
 import net.nypc.gps.bo.Waypoint;
 import net.nypc.gps.service.GPXService;
+import net.nypc.gps.util.ConvertUtil;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -239,6 +240,7 @@ public class GPXToExcel {
 	}
 	
 	public void writeRows(GPX gpx) {
+		ConvertUtil converter = new ConvertUtil();
 	 
 		List<Waypoint> waypoints = gpx.getWaypoints();
 		int rowNum = 1;
@@ -249,8 +251,11 @@ public class GPXToExcel {
 			Row row = sheet.createRow(rowNum++);
 	        row.createCell(GCCODE).setCellValue(waypoint.getName());
 	        row.createCell(GCNAME).setCellValue(geocache.getName());
-	        row.createCell(LATITUDE).setCellValue(waypoint.getLat());
-	        row.createCell(LONGITUDE).setCellValue(waypoint.getLon());
+	        
+	        String lat = converter.DecimalToDDM(Double.valueOf(waypoint.getLat()), "lat");
+	        String lon = converter.DecimalToDDM(Double.valueOf(waypoint.getLon()), "long");
+	        row.createCell(LATITUDE).setCellValue(lat);
+	        row.createCell(LONGITUDE).setCellValue(lon);
 	        row.createCell(CACHETYPE).setCellValue(waypoint.getType());
 	        row.createCell(SIZE).setCellValue(geocache.getContainer());
 	        row.createCell(DIFFICULTY).setCellValue(geocache.getDifficulty());
