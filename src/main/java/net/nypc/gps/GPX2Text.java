@@ -64,7 +64,7 @@ public class GPX2Text {
 		HelpFormatter formatter = new HelpFormatter();
 		try {
 			CommandLine cmd = parser.parse( options, args);
-			if (cmd.hasOption("inputFile")) {
+			if (cmd.hasOption("i") || cmd.hasOption("inputFile")) {
 				this.setInputFile(cmd.getOptionValue("inputFile"));
 			} else { 
 				formatter.printHelp(appName, options );

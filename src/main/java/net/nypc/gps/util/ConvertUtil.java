@@ -140,11 +140,11 @@ public class ConvertUtil {
 			if (decimal < 0.0) {
 				hemisphere = "W";
 			} else {
-				hemisphere = " ";
+				hemisphere = "E";
 			}
 		}
-		int iDegrees = (int) Math.abs(Math.round(decimal));
-		Double minutes = (Math.abs(decimal) - iDegrees) * 60;
+		int iDegrees = (int) Math.floor(Math.abs(decimal));
+		Double minutes = (Math.abs(decimal) - iDegrees ) * 60;
 		//System.out.println("idegrees: "+iDegrees);
 		//System.out.println("minutes: "+ minutes);
 		ddm = String.format("%s %s %5.3f", hemisphere, String.valueOf(iDegrees), minutes);

@@ -9,6 +9,7 @@ import net.nypc.gps.bo.GPX;
 import net.nypc.gps.bo.Groundspeak;
 import net.nypc.gps.bo.Log;
 import net.nypc.gps.bo.Waypoint;
+import net.nypc.gps.util.ConvertUtil;
 import net.nypc.gps.xstream.GPXConverter;
 
 import org.apache.commons.io.FileUtils;
@@ -75,21 +76,24 @@ public class GPXService {
 	}
 	
 	public void printGPX(GPX gpx) {
+		ConvertUtil converter = new ConvertUtil();
 		System.out.println("name: "+ gpx.getName());
 		System.out.println("desc: "+ gpx.getDesc());
 		List<Waypoint> waypoints = gpx.getWaypoints();
 		for (Waypoint wpt: waypoints) {
-			System.out.println("wpt/name: "+wpt.getName());
-			System.out.println("wpt/desc: "+wpt.getDesc());
-			System.out.println("wpt/lat: "+wpt.getLat());
-			System.out.println("wpt/lon: "+wpt.getLon());
-			System.out.println("wpt/url: "+wpt.getUrl());
-			System.out.println("wpt/urlname: "+wpt.getUrlname());
-			System.out.println("wpt/sym: "+wpt.getSym());
-			System.out.println("wpt/type: "+wpt.getType());
 			Groundspeak groundspeak = wpt.getGroundspeak();
-			System.out.println("wpt/groundspeak:name : "+groundspeak.getName());
-			System.out.println("wpt/groundspeak:placed_by : "+groundspeak.getPlaced_by());
+			System.out.println("Name: "+wpt.getName());
+			System.out.println("Description: "+wpt.getDesc());
+			String lat = converter.DecimalToDDM(Double.valueOf(wpt.getLat()), "lat");
+	        String lon = converter.DecimalToDDM(Double.valueOf(wpt.getLon()), "long");
+			System.out.println("Latitude: "+lat);
+			System.out.println("Longitude: "+lon);
+			System.out.println("Type: "+wpt.getType());
+			System.out.println("Size: "+groundspeak.getContainer());
+			
+			System.out.println("Country : "+groundspeak.getCountry());
+			System.out.println("State : "+groundspeak.getState());
+			System.out.println("Placed By : "+groundspeak.getPlaced_by());
 			System.out.println();		
 		}
 		
