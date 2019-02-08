@@ -23,16 +23,21 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.hssf.util.HSSFColor;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.Hyperlink;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.xssf.usermodel.XSSFFont; 
+import org.apache.poi.xssf.usermodel.XSSFHyperlink;
 
 public class GPXToExcel {
 	
@@ -43,6 +48,10 @@ public class GPXToExcel {
 	
 	Workbook workbook = null;
 	Sheet sheet = null;
+	
+	CellStyle wrapped_cs;
+    XSSFCellStyle hlinkstyle; 
+    CreationHelper createHelper;
 	
 	private final int GCCODE = 0;
 	private final int GCNAME = 1;
@@ -146,20 +155,8 @@ public class GPXToExcel {
 	public void run() {
 		System.out.println("GPXToExcel");
         GPXService gpxService = new GPXService();
-        
-		if (this.getFormat().equals("xlsx")) {
-			workbook = new XSSFWorkbook();
-			this.outputFile = "geocaches.xlsx";
-		} else if (this.getFormat().equals("xls")) {
-			workbook = new HSSFWorkbook();
-			this.outputFile = "geocaches.xls";
-		} else if (this.getFormat().equals("csv")) {
-			workbook = new HSSFWorkbook();
-			this.outputFile = "geocaches.csv";
-		} else {
-			System.err.println("Only valid formats are xlsx, xls, or csv.");
-			System.exit(1);
-		}
+        initWorkbook();
+		 
 		
 		File currentDirectory = new File(new File(".").getAbsolutePath());
 		String absFile = new String();
@@ -189,11 +186,24 @@ public class GPXToExcel {
 		// Create a Sheet
         sheet = workbook.createSheet("Geocaches");
 		writeHeader(gpx);
-		writeRows(gpx);
-		// Resize all columns to fit the content size
-        for(int i = 0; i < columns.length; i++) {
-            sheet.autoSizeColumn(i);
-        }
+		writeRows(gpx); 
+        
+		//  set column widths 
+		
+        this.sheet.autoSizeColumn( this.GCCODE);
+        this.sheet.autoSizeColumn( this.GCNAME);
+        this.sheet.autoSizeColumn( this.LATITUDE);
+        this.sheet.autoSizeColumn( this.LONGITUDE);
+        this.sheet.autoSizeColumn( this.CACHETYPE);
+        this.sheet.autoSizeColumn( this.SIZE );
+        this.sheet.autoSizeColumn( this.DIFFICULTY);
+        this.sheet.autoSizeColumn( this.TERRAIN);
+        this.sheet.setColumnWidth( this.SHORTDESC, 20000 );
+        this.sheet.setColumnWidth( this.LONGDESC, 20000 );
+        this.sheet.autoSizeColumn( this.PLACEDBY );
+        this.sheet.autoSizeColumn( this.OWNER  );
+        this.sheet.autoSizeColumn( this.COUNTRY );
+        this.sheet.autoSizeColumn( this.STATE );
 
         // Write the output to a file
         FileOutputStream fileOut;
@@ -212,6 +222,35 @@ public class GPXToExcel {
 			e.printStackTrace();
 		}
         
+	}
+	
+	public void initWorkbook() {
+		if (this.getFormat().equals("xlsx")) {
+			workbook = new XSSFWorkbook();
+			this.outputFile = "geocaches.xlsx";
+		} else if (this.getFormat().equals("xls")) {
+			workbook = new HSSFWorkbook();
+			this.outputFile = "geocaches.xls";
+		} else if (this.getFormat().equals("csv")) {
+			workbook = new HSSFWorkbook();
+			this.outputFile = "geocaches.csv";
+		} else {
+			System.err.println("Only valid formats are xlsx, xls, or csv.");
+			System.exit(1);
+		}
+		
+        this.createHelper = this.workbook.getCreationHelper();
+		
+	    this.hlinkstyle = (XSSFCellStyle) this.workbook.createCellStyle();
+	    XSSFFont hlinkfont = (XSSFFont) this.workbook.createFont();
+	    hlinkfont.setUnderline(XSSFFont.U_SINGLE);
+	    hlinkfont.setColor(HSSFColor.BLUE.index);
+	    hlinkstyle.setFont(hlinkfont);
+	    
+	    this.wrapped_cs = this.workbook.createCellStyle();
+		this.wrapped_cs.setWrapText(true);
+		
+		
 	}
 	
 	public void writeHeader(GPX gpx) {
@@ -249,6 +288,15 @@ public class GPXToExcel {
 		for (Waypoint waypoint: waypoints) {
 			Groundspeak geocache = waypoint.getGroundspeak();
 			Row row = sheet.createRow(rowNum++);
+			
+			Cell cell = row.createCell(GCCODE);
+			cell.setCellValue(waypoint.getName());
+			//XSSFHyperlink link = (XSSFHyperlink) this.createHelper.createHyperlink(Hyperlink.LINK_URL);
+			//XSSFHyperlink link =  new XSSFHyperlink();
+			//link.setAddress(waypoint.getUrl());
+			//cell.setHyperlink((XSSFHyperlink) link);
+		    cell.setCellStyle(hlinkstyle);
+			
 	        row.createCell(GCCODE).setCellValue(waypoint.getName());
 	        row.createCell(GCNAME).setCellValue(geocache.getName());
 	        
@@ -263,8 +311,13 @@ public class GPXToExcel {
 	        shortDesc = geocache.getShortDescription();
 	        longDesc = StringUtils.abbreviate(geocache.getLongDescription(), MAXCELLSIZE);
 	        
-	        row.createCell(SHORTDESC).setCellValue(shortDesc);
-	        row.createCell(LONGDESC).setCellValue(longDesc);
+	        cell = row.createCell(SHORTDESC); 
+			cell.setCellValue(shortDesc);
+			cell.setCellStyle(this.wrapped_cs);
+			
+			cell = row.createCell(LONGDESC); 
+			cell.setCellValue(longDesc);
+			cell.setCellStyle(this.wrapped_cs); 
 	        row.createCell(PLACEDBY).setCellValue(geocache.getPlaced_by());
 	        row.createCell(OWNER).setCellValue(geocache.getOwner());
 	        row.createCell(COUNTRY).setCellValue(geocache.getCountry());
