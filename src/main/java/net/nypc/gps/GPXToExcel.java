@@ -49,6 +49,7 @@ public class GPXToExcel {
 	private String outputFile;
 	private String format;
 	private boolean debug;
+	private final String defaultFile = "/cul/src/nypc-gpstools/script/airport-caches.gpx";
 	
 	Workbook workbook = null;
 	Sheet sheet = null;
@@ -131,12 +132,15 @@ public class GPXToExcel {
 		HelpFormatter formatter = new HelpFormatter();
 		try {
 			CommandLine cmd = parser.parse( options, args);
+			//this.setInputFile(defaultFile);
+			
 			if (cmd.hasOption("i") || cmd.hasOption("inputFile")) {
-				this.setInputFile(cmd.getOptionValue("inputFile"));
+				this.setInputFile(cmd.getOptionValue("inputFile").trim());
 			} else { 
 				formatter.printHelp(appName, options );
 				System.exit(0);
 			}
+			if (isDebug()) System.out.println("inputFile: ["+ this.getInputFile()+ "]");
 			
 			if (cmd.hasOption("format")) {
 				this.setFormat(cmd.getOptionValue("format"));
@@ -161,21 +165,15 @@ public class GPXToExcel {
         GPXService gpxService = new GPXService();  
 		
 		String gpxXml = new String();
-		
-		String currentDir = System.getProperty("user.dir");
-		 
-		String fullPath = currentDir +"/"+ this.getInputFile(); 
-		Path path = Paths.get(fullPath);
-		File inFile = path.toFile();
 		try {
-			//gpxXml = FileUtils.readFileToString(inFile);
-		    gpxXml = new String (Files.readAllBytes(inFile.toPath()),Charset.forName("UTF-8"));
-		} catch (IOException e) {
+			gpxXml = getGPX();
+		} catch (Exception e1) {
 			// TODO Auto-generated catch block
-			// e.printStackTrace();
-			System.err.println("Could not open inputFile: "+ fullPath);
+			e1.printStackTrace();
 			System.exit(1);
 		}
+		
+		
 		
 		initWorkbook();
 		GPX gpx = gpxService.xmlToGpx(gpxXml);
@@ -208,7 +206,7 @@ public class GPXToExcel {
 			fileOut = new FileOutputStream(this.getOutputFile());
 			workbook.write(fileOut);
 	        fileOut.close();
-
+            System.out.println("Output save to: "+ this.getOutputFile());
 	        // Closing the workbook
 	        workbook.close();
 		} catch (FileNotFoundException e) {
@@ -319,6 +317,28 @@ public class GPXToExcel {
 	        row.createCell(COUNTRY).setCellValue(geocache.getCountry());
 	        row.createCell(STATE).setCellValue(geocache.getState());
 		}
+	}
+	
+	public String getGPX() throws Exception {
+		String gpxXml = new String(); 
+		File inFile = new File(this.getInputFile());
+		String absFile = inFile.getAbsolutePath();
+		
+		if (!inFile.exists()) {
+			throw new Exception("Could not find : "+this.getInputFile());
+		}
+		// System.out.println("absFile: "+ inFile.getAbsolutePath());
+		try {
+			//gpxXml = FileUtils.readFileToString(inFile);
+		    gpxXml = new String (Files.readAllBytes(inFile.toPath()),Charset.forName("UTF-8"));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			// e.printStackTrace();
+			System.err.println("Could not open inputFile: "+ this.inputFile);
+			e.printStackTrace();
+			System.exit(1);
+		}
+		return gpxXml;
 	}
 
 }
