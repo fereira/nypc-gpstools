@@ -4,6 +4,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 import net.nypc.gps.bo.GPX;
@@ -21,7 +25,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-
+import org.apache.poi.common.usermodel.HyperlinkType;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.hssf.util.HSSFColor;
 import org.apache.poi.ss.usermodel.Cell;
@@ -127,7 +131,7 @@ public class GPXToExcel {
 		HelpFormatter formatter = new HelpFormatter();
 		try {
 			CommandLine cmd = parser.parse( options, args);
-			if (cmd.hasOption("inputFile")) {
+			if (cmd.hasOption("i") || cmd.hasOption("inputFile")) {
 				this.setInputFile(cmd.getOptionValue("inputFile"));
 			} else { 
 				formatter.printHelp(appName, options );
@@ -154,33 +158,26 @@ public class GPXToExcel {
 	
 	public void run() {
 		System.out.println("GPXToExcel");
-        GPXService gpxService = new GPXService();
-        initWorkbook();
-		 
+        GPXService gpxService = new GPXService();  
 		
-		File currentDirectory = new File(new File(".").getAbsolutePath());
-		String absFile = new String();
-		try {
-			absFile = currentDirectory.getCanonicalPath()+"/"+ this.getInputFile();
-			System.out.println("directory: "+currentDirectory.getCanonicalPath());
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		
-		System.out.println("inputFile: "+ absFile);
 		String gpxXml = new String();
-		File f = new File(absFile);
-		if (!f.exists()) {
-			System.err.println("Could not find input file");
-			System.exit(1);
-		}
+		
+		String currentDir = System.getProperty("user.dir");
+		 
+		String fullPath = currentDir +"/"+ this.getInputFile(); 
+		Path path = Paths.get(fullPath);
+		File inFile = path.toFile();
 		try {
-			gpxXml = FileUtils.readFileToString(f);
+			//gpxXml = FileUtils.readFileToString(inFile);
+		    gpxXml = new String (Files.readAllBytes(inFile.toPath()),Charset.forName("UTF-8"));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			// e.printStackTrace();
+			System.err.println("Could not open inputFile: "+ fullPath);
+			System.exit(1);
 		}
+		
+		initWorkbook();
 		GPX gpx = gpxService.xmlToGpx(gpxXml);
 		
 		// Create a Sheet
@@ -290,21 +287,20 @@ public class GPXToExcel {
 			Row row = sheet.createRow(rowNum++);
 			
 			Cell cell = row.createCell(GCCODE);
-			cell.setCellValue(waypoint.getName());
-			//XSSFHyperlink link = (XSSFHyperlink) this.createHelper.createHyperlink(Hyperlink.LINK_URL);
-			//XSSFHyperlink link =  new XSSFHyperlink();
-			//link.setAddress(waypoint.getUrl());
-			//cell.setHyperlink((XSSFHyperlink) link);
-		    cell.setCellStyle(hlinkstyle);
-			
-	        row.createCell(GCCODE).setCellValue(waypoint.getName());
+			cell.setCellValue(waypoint.getName()); 
+			XSSFHyperlink link = (XSSFHyperlink) this.createHelper.createHyperlink(HyperlinkType.URL); 
+			link.setAddress(waypoint.getUrl());
+			cell.setHyperlink((XSSFHyperlink) link);
+		    cell.setCellStyle(hlinkstyle); 
+		    
 	        row.createCell(GCNAME).setCellValue(geocache.getName());
 	        
 	        String lat = converter.DecimalToDDM(Double.valueOf(waypoint.getLat()), "lat");
 	        String lon = converter.DecimalToDDM(Double.valueOf(waypoint.getLon()), "long");
 	        row.createCell(LATITUDE).setCellValue(lat);
 	        row.createCell(LONGITUDE).setCellValue(lon);
-	        row.createCell(CACHETYPE).setCellValue(waypoint.getType());
+	        
+	        row.createCell(CACHETYPE).setCellValue(geocache.getType());
 	        row.createCell(SIZE).setCellValue(geocache.getContainer());
 	        row.createCell(DIFFICULTY).setCellValue(geocache.getDifficulty());
 	        row.createCell(TERRAIN).setCellValue(geocache.getTerrain());
